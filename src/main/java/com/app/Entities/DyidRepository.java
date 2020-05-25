@@ -1,4 +1,4 @@
-package Entities;
+package com.app.Entities;
 
 import org.springframework.data.repository.CrudRepository;
 

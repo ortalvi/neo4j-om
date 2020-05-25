@@ -1,7 +1,7 @@
-package app;
+package com.app;
 
-import Entities.DyidEntity;
-import Entities.DyidRepository;
+import com.app.Entities.DyidEntity;
+import com.app.Entities.DyidRepository;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericRecord;
@@ -11,13 +11,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 
 import java.io.File;
 import java.io.IOException;
 
 @SpringBootApplication
-@EnableNeo4jRepositories
+@Configuration
 public class MyService {
 
     //    @Autowired
