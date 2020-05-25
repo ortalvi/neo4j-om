@@ -12,6 +12,8 @@ import org.neo4j.ogm.annotation.Relationship;
 public class DyidEntity {
     @Id
     @GeneratedValue
+    private Long id;
+
     private Long dyid;
 
     public DyidEntity() {
