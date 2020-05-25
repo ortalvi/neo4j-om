@@ -24,7 +24,7 @@ public class DyidEntity {
     @Relationship(type = "DYID_TO_LEADER", direction = Relationship.OUTGOING)
     public DyidEntity dyidToLeaderRelations;
 
-    private void leader(DyidEntity dyid) {
+    public void leader(DyidEntity dyid) {
         dyidToLeaderRelations = dyid;
     }
 }
