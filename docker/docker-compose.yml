@@ -1,0 +1,28 @@
+version: '3'
+services:
+
+  neo-neo4j:
+    image: neo4j:4.0.0
+    volumes:
+      - ./data/neo4j/data:/data
+      - ./data/neo4j/logs:/logs
+      - ./data/neo4j/import:/var/lib/neo4j/import
+      - ./data/neo4j/plugins:/plugins
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/test
+
+  neo-localstack-s3:
+    image: localstack/localstack
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    ports:
+      - 4567-4584:4567-4584
+      - 8055:8080
+    volumes:
+      - ./data/localstack:/tmp/localstack
