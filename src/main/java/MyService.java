@@ -1,11 +1,9 @@
 import Entities.DyidRepository;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
-import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.hadoop.io.AvroKeyValue;
-import org.apache.avro.io.DatumReader;
 import org.apache.avro.specific.SpecificDatumReader;
-import org.apache.avro.specific.SpecificRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +28,20 @@ public class MyService {
     @Transactional
     public void doWork() throws IOException {
 
-        SpecificDatumReader<AvroKeyValue<Long,Long>> datumReader = new SpecificDatumReader(AvroKeyValue.getSchema(Schema.create(Schema.Type.LONG), Schema.create(Schema.Type.LONG)));
+        SpecificDatumReader<GenericRecord> datumReader = new SpecificDatumReader(AvroKeyValue.getSchema(Schema.create(Schema.Type.LONG), Schema.create(Schema.Type.LONG)));
 
-        DataFileReader<AvroKeyValue<Long,Long>> dataFileReader = null;
+        DataFileReader<GenericRecord> dataFileReader = null;
         try {
-            dataFileReader = new DataFileReader<AvroKeyValue<Long,Long>>(new File("/Users/ortalvaknin/Downloads/dyid_leder.avro"), datumReader);
+            dataFileReader = new DataFileReader(new File("dyid_leader.avro"), datumReader);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        AvroKeyValue<Long,Long> kv = null;
-        while(dataFileReader.hasNext()){
-            kv=dataFileReader.next(kv);
-            System.out.println(kv);
+        GenericRecord kv = null;
+        while (dataFileReader.hasNext()) {
+            kv = dataFileReader.next(kv);
+            AvroKeyValue avroKeyValue = new AvroKeyValue(kv);
+            System.out.println(avroKeyValue);
         }
 
 
