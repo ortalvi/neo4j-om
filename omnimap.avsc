@@ -1,0 +1,34 @@
+{
+   "namespace": "com.app.Records",
+   "type": "record",
+   "name": "omnimap",
+   "fields": [
+      {
+        "name": "key",
+        "type": {
+            "type": "record",
+            "name": "keyRecord",
+            "fields": [
+                        {"name": "u",
+                         "type": {
+                             "type": "record",
+                             "name": "uRecord",
+                             "fields": [{"name": "n", "type": "long"},
+                                        {"name": "type", "type": ["string", "null"]}]
+                          }
+                        },
+                        {"name": "v",
+                         "type": {
+                             "type": "record",
+                             "name": "vRecord",
+                             "fields": [{"name": "n", "type": "long"},
+                                        {"name": "type", "type": ["string", "null"]}]
+                          }
+                        },
+                        {"name" : "ts", "type" : "long"}
+                       ]
+        }
+      },
+      {"name": "value", "type": ["string", "null"]}
+   ]
+}
