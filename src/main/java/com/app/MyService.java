@@ -1,69 +1,37 @@
 package com.app;
 
-import com.app.Entities.DyidEntity;
-import com.app.Entities.DyidRepository;
-import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileReader;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.hadoop.io.AvroKeyValue;
-import org.apache.avro.specific.SpecificDatumReader;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
+import com.app.Records.DyidEdge;
+import com.app.Records.KeyValue;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.app.Records.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Parser;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 @SpringBootApplication
 @Configuration
 @Service
 public class MyService {
 
-    //    @Autowired
-//    private DyidRepository repository;
-//
-//    public app.MyService(DyidRepository repository) {
-//        this.repository = repository;
-//    }
-//
     public MyService() {
     }
 
     @Transactional
     public void doWork() throws IOException {
+        List<DyidEdge> dyidEdges = readFromJson();
 
-        Parser parser = new Parser();
-        InputStream in = MyService.class.getClass().getResourceAsStream("/omnimap.avsc");
-        Schema mSchema = parser.parse(in);
-
-        SpecificDatumReader<GenericRecord> datumReader = new SpecificDatumReader<GenericRecord>(mSchema);
-
-        DataFileReader<GenericRecord> dataFileReader = null;
-        try {
-            dataFileReader = new DataFileReader<GenericRecord>(new File("omnimap.avro"), datumReader);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        GenericRecord kv = null;
-        while (dataFileReader.hasNext()) {
-            kv = dataFileReader.next(kv);
-//            AvroKeyValue<Long, Long> avroKeyValue = new AvroKeyValue(kv);
-//            DyidEntity dyid = new DyidEntity(avroKeyValue.getKey());
-//            DyidEntity leader = new DyidEntity(avroKeyValue.getValue());
-//            dyid.leader(leader);
-//            dyidRepository.save(dyid);
-        }
     }
 
 //
@@ -100,5 +68,21 @@ public class MyService {
 //    public static void main(String[] args) {
 //        SpringApplication.run(MyService.class, args);
 //    }
+
+    private List<DyidEdge> readFromJson() throws FileNotFoundException {
+        List<DyidEdge> result = new ArrayList<>();
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new FileReader("om.json"));
+
+        JsonObject obj = gson.fromJson(reader, JsonObject.class);
+        JsonArray jsonArray = obj.get("list").getAsJsonArray();
+        for (JsonElement jsonElement : jsonArray) {
+            JsonElement key = jsonElement.getAsJsonObject().get("key");
+            DyidEdge dyidEdge = gson.fromJson(key, DyidEdge.class);
+            result.add(dyidEdge);
+        }
+
+        return result;
+    }
 
 }
