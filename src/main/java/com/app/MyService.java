@@ -1,6 +1,9 @@
 package com.app;
 
-import com.app.Entities.*;
+import com.app.Entities.CuidEntity;
+import com.app.Entities.CuidRepository;
+import com.app.Entities.DyidEntity;
+import com.app.Entities.DyidRepository;
 import com.app.Records.OmniEdge;
 import com.app.Records.OmniNode;
 import com.google.gson.Gson;
@@ -25,87 +28,67 @@ import java.util.List;
 @Service
 public class MyService {
 
-    public MyService() {
-    }
-
-//    @Transactional
-//    public void doWork() throws IOException {
-//    }
-
-
-//    @Bean
-//    CommandLineRunner neo4jDemo(DyidRepository dyidRepository) {
-//        return args -> {
-//
-//            dyidRepository.deleteAll();
-//
-//            SpecificDatumReader<GenericRecord> datumReader = new SpecificDatumReader(AvroKeyValue.getSchema(Schema.create(Schema.Type.LONG), Schema.create(Schema.Type.LONG)));
-//
-//            DataFileReader<GenericRecord> dataFileReader = null;
-//            try {
-//                dataFileReader = new DataFileReader(new File("dyid_leader.avro"), datumReader);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//
-//            GenericRecord kv = null;
-//            while (dataFileReader.hasNext()) {
-//                kv = dataFileReader.next(kv);
-//                AvroKeyValue<Long, Long> avroKeyValue = new AvroKeyValue(kv);
-//                DyidEntity dyid = new DyidEntity(avroKeyValue.getKey());
-//                DyidEntity leader = new DyidEntity(avroKeyValue.getValue());
-//                dyid.leader(leader);
-//                dyidRepository.save(dyid);
-//            }
-//        };
-//    }
-
     @Bean
     CommandLineRunner neo4jDemo(DyidRepository dyidRepository, CuidRepository cuidRepository) {
         return args -> {
 
-        dyidRepository.deleteAll();
-        cuidRepository.deleteAll();
+            dyidRepository.deleteAll();
+            cuidRepository.deleteAll();
 
-        List<OmniEdge> omniEdges = readFromJson();
-        omniEdges.forEach(edge -> {
-            OmniNode node1 = edge.getU();
-            OmniNode node2 = edge.getV();
+            List<OmniEdge> omniEdges = readFromJson();
 
-            if (null == node1.getType()) {
-                DyidEntity dyidEntity1 = dyidRepository.findByDyid(node1.getN()) == null ? new DyidEntity(node1.getN()) :
-                        dyidRepository.findByDyid(node1.getN());
-                if (null == node2.getType()) {
-                    DyidEntity dyidEntity2 = dyidRepository.findByDyid(node2.getN()) == null ? new DyidEntity(node2.getN()) :
-                            dyidRepository.findByDyid(node2.getN());
-                    dyidEntity1.setDyidToDyidEdge(dyidEntity2);
-                    dyidRepository.save(dyidEntity2);
+            omniEdges.forEach(edge -> {
+                OmniNode uEdge = edge.getU();
+                OmniNode vEdge = edge.getV();
+
+                if (uEdge.getType() == null) {
+                    handleDyidRelationship(dyidRepository, cuidRepository, uEdge, vEdge);
                 } else {
-                    CuidEntity cuidEntity2 = cuidRepository.findByCuidAndType(node2.getN(), node2.getType().getTypeString()) == null ? new CuidEntity(node2.getN(), node2.getType().getTypeString()) :
-                            cuidRepository.findByCuidAndType(node2.getN(), node2.getType().getTypeString());
-                    dyidEntity1.setDyidToCuidEdge(cuidEntity2);
-                    cuidRepository.save(cuidEntity2);
+                    handleCuidRelationship(dyidRepository, cuidRepository, uEdge, vEdge);
                 }
-                dyidRepository.save(dyidEntity1);
-            } else {
-                CuidEntity cuidEntity1 = cuidRepository.findByCuidAndType(node1.getN(), node1.getType().getTypeString()) == null ? new CuidEntity(node1.getN(), node1.getType().getTypeString()) :
-                        cuidRepository.findByCuidAndType(node1.getN(), node1.getType().getTypeString());
-                if (null == node2.getType()) {
-                    DyidEntity dyidEntity2 = dyidRepository.findByDyid(node2.getN()) == null ? new DyidEntity(node2.getN()) :
-                            dyidRepository.findByDyid(node2.getN());
-                    cuidEntity1.setCuidToDyidEdge(dyidEntity2);
-                    dyidRepository.save(dyidEntity2);
-                } else {
-                    CuidEntity cuidEntity2 = cuidRepository.findByCuidAndType(node2.getN(), node2.getType().getTypeString()) == null ? new CuidEntity(node2.getN(), node2.getType().getTypeString()) :
-                            cuidRepository.findByCuidAndType(node2.getN(), node2.getType().getTypeString());
-                    cuidEntity1.setCuidToCuidEdge(cuidEntity2);
-                    cuidRepository.save(cuidEntity2);
-                }
-                cuidRepository.save(cuidEntity1);
-            }
-        });
+            });
 
         };
+    }
+
+    private void handleCuidRelationship(DyidRepository dyidRepository, CuidRepository cuidRepository, OmniNode uEdge, OmniNode vEdge) {
+        CuidEntity cuid = getCuidEntity(cuidRepository, uEdge);
+        if (null == vEdge.getType()) {
+            DyidEntity toDyid = getDyidEntity(dyidRepository, vEdge);
+            cuid.setCuidToDyidEdge(toDyid);
+        } else {
+            CuidEntity toCuid = getCuidEntity(cuidRepository, vEdge);
+            cuid.setCuidToCuidEdge(toCuid);
+        }
+
+        cuidRepository.save(cuid);
+    }
+
+    private void handleDyidRelationship(DyidRepository dyidRepository, CuidRepository cuidRepository, OmniNode uEdge, OmniNode vEdge) {
+        DyidEntity dyid = getDyidEntity(dyidRepository, uEdge);
+
+        if (vEdge.getType() == null) {
+            DyidEntity toDyid = getDyidEntity(dyidRepository, vEdge);
+            dyid.setDyidToDyidEdge(toDyid);
+        } else {
+            CuidEntity toCuid = getCuidEntity(cuidRepository, vEdge);
+            dyid.setDyidToCuidEdge(toCuid);
+        }
+        dyidRepository.save(dyid);
+    }
+
+    private CuidEntity getCuidEntity(CuidRepository cuidRepository, OmniNode vEdge) {
+        CuidEntity cuidEntity = cuidRepository.findByCuidAndType(vEdge.getN(), vEdge.getType().getTypeString());
+        cuidEntity = cuidEntity == null ? new CuidEntity(vEdge.getN(), vEdge.getType().getTypeString()) : cuidEntity;
+        cuidRepository.save(cuidEntity);
+        return cuidEntity;
+    }
+
+    private DyidEntity getDyidEntity(DyidRepository dyidRepository, OmniNode uEdge) {
+        DyidEntity dyidEntity = dyidRepository.findByDyid(uEdge.getN());
+        dyidEntity = dyidEntity == null ? new DyidEntity(uEdge.getN()) : dyidEntity;
+        dyidRepository.save(dyidEntity);
+        return dyidEntity;
     }
 
 //    public static void main(String[] args) throws IOException {

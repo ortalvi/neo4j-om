@@ -25,7 +25,7 @@ public class CuidEntity {
         this.type = type;
     }
 
-    @Relationship(type = "CUID_TO_DYID", direction = Relationship.INCOMING)
+    @Relationship(type = "CUID_TO_DYID", direction = Relationship.OUTGOING)
     public Set<DyidEntity> cuidToDyidRelations;
 
     public void setCuidToDyidEdge(DyidEntity dyid) {
