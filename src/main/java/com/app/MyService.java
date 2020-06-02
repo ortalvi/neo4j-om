@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class MyService {
             dyidRepository.deleteAll();
             cuidRepository.deleteAll();
 
-            List<OmniEdge> omniEdges = readFromJson();
+            List<OmniEdge> omniEdges = readFromJsonAllFiles();
 
             omniEdges.forEach(edge -> {
                 OmniNode uEdge = edge.getU();
@@ -44,24 +45,20 @@ public class MyService {
                 if (uEdge.getType() == null) {
                     handleDyidRelationship(dyidRepository, cuidRepository, uEdge, vEdge);
                 } else {
-                    handleCuidRelationship(dyidRepository, cuidRepository, uEdge, vEdge);
+                    CuidEntity cuid = getCuidEntity(cuidRepository, uEdge);
+                    if (null == vEdge.getType()) {
+                        DyidEntity toDyid = getDyidEntity(dyidRepository, vEdge);
+                        cuid.setCuidToDyidEdge(toDyid);
+                    } else {
+                        CuidEntity toCuid = getCuidEntity(cuidRepository, vEdge);
+                        cuid.setCuidToCuidEdge(toCuid);
+                    }
+
+                    cuidRepository.save(cuid);
                 }
             });
 
         };
-    }
-
-    private void handleCuidRelationship(DyidRepository dyidRepository, CuidRepository cuidRepository, OmniNode uEdge, OmniNode vEdge) {
-        CuidEntity cuid = getCuidEntity(cuidRepository, uEdge);
-        if (null == vEdge.getType()) {
-            DyidEntity toDyid = getDyidEntity(dyidRepository, vEdge);
-            cuid.setCuidToDyidEdge(toDyid);
-        } else {
-            CuidEntity toCuid = getCuidEntity(cuidRepository, vEdge);
-            cuid.setCuidToCuidEdge(toCuid);
-        }
-
-        cuidRepository.save(cuid);
     }
 
     private void handleDyidRelationship(DyidRepository dyidRepository, CuidRepository cuidRepository, OmniNode uEdge, OmniNode vEdge) {
@@ -100,7 +97,29 @@ public class MyService {
         SpringApplication.run(MyService.class, args);
     }
 
-    private List<OmniEdge> readFromJson() throws FileNotFoundException {
+    private List<OmniEdge> readFromJsonAllFiles() throws FileNotFoundException {
+        List<OmniEdge> result = new ArrayList<>();
+        File folder = new File("json");
+
+        for (File json : folder.listFiles()) {
+            System.out.println(json.getPath());
+            Gson gson = new Gson();
+            JsonReader reader = new JsonReader(new FileReader(json));
+
+            JsonObject obj = gson.fromJson(reader, JsonObject.class);
+            JsonArray jsonArray = obj.get("list").getAsJsonArray();
+            for (JsonElement jsonElement : jsonArray) {
+                JsonElement key = jsonElement.getAsJsonObject().get("key");
+                OmniEdge omniEdge = gson.fromJson(key, OmniEdge.class);
+                result.add(omniEdge);
+            }
+
+        }
+
+        return result;
+    }
+
+    private List<OmniEdge> readFromJsonSingleFile() throws FileNotFoundException {
         List<OmniEdge> result = new ArrayList<>();
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new FileReader("om.json"));
@@ -115,5 +134,6 @@ public class MyService {
 
         return result;
     }
+
 
 }
