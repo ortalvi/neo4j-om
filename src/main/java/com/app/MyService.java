@@ -99,7 +99,7 @@ public class MyService {
 
     private List<OmniEdge> readFromJsonAllFiles() throws FileNotFoundException {
         List<OmniEdge> result = new ArrayList<>();
-        File folder = new File("json");
+        File folder = new File("json_urban");
 
         for (File json : folder.listFiles()) {
             System.out.println(json.getPath());
